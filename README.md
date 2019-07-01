@@ -8,3 +8,11 @@ ProjectRefs is a Visual Studio extension.
 Adds transitive project references to "refs" solution folder and remove unused project references automatically.
 
 It is inspired by [Add Project References To Solution](https://marketplace.visualstudio.com/items?itemName=MohitC.AddProjectRefsToSolution3a2)
+
+## How to use
+
+It will analyze dependency graph and add/remove reference projects
+
+- after solution opened
+
+- after <img src="img/SaveAll_16x.svg" width="16"> Save ALL.

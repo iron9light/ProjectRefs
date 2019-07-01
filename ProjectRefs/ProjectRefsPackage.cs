@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -49,7 +49,7 @@ namespace ProjectRefs
 
         private ProjectHelper _projectHelper;
 
-        private class VsRunningDocTableEvents : IVsRunningDocTableEvents
+        private class VsRunningDocTableEvents : IVsRunningDocTableEvents, IVsRunningDocTableEvents4
         {
             private readonly ProjectRefsPackage _package;
 
@@ -70,9 +70,6 @@ namespace ProjectRefs
 
             public int OnAfterSave(uint docCookie)
             {
-                ThreadHelper.ThrowIfNotOnUIThread();
-                _package._packageHelper.LogDebug("OnAfterSave");
-                _package.ProcessProjectRefs();
                 return VSConstants.S_OK;
             }
 
@@ -87,6 +84,24 @@ namespace ProjectRefs
             }
 
             public int OnAfterDocumentWindowHide(uint docCookie, IVsWindowFrame pFrame)
+            {
+                return VSConstants.S_OK;
+            }
+
+            public int OnBeforeFirstDocumentLock(IVsHierarchy pHier, uint itemid, string pszMkDocument)
+            {
+                return VSConstants.S_OK;
+            }
+
+            public int OnAfterSaveAll()
+            {
+                ThreadHelper.ThrowIfNotOnUIThread();
+                _package._packageHelper.LogDebug("OnAfterSaveAll");
+                _package.ProcessProjectRefsAsync();
+                return VSConstants.S_OK;
+            }
+
+            public int OnAfterLastDocumentUnlock(IVsHierarchy pHier, uint itemid, string pszMkDocument, int fClosedWithoutSaving)
             {
                 return VSConstants.S_OK;
             }
@@ -119,8 +134,8 @@ namespace ProjectRefs
             _projectHelper = new ProjectHelper(_packageHelper);
 
             SolutionEvents.OnAfterOpenSolution += SolutionEvents_OnAfterOpenSolution;
-            SolutionEvents.OnAfterOpenProject += SolutionEvents_OnAfterOpenProject;
-            SolutionEvents.OnAfterLoadProject += SolutionEvents_OnAfterLoadProject;
+            ////SolutionEvents.OnAfterOpenProject += SolutionEvents_OnAfterOpenProject;
+            ////SolutionEvents.OnAfterLoadProject += SolutionEvents_OnAfterLoadProject;
 
             ErrorHandler.ThrowOnFailure(solution.GetProperty((int)__VSPROPID.VSPROPID_IsSolutionOpen, out object value));
             if (value is bool isOpened && isOpened)
@@ -129,19 +144,19 @@ namespace ProjectRefs
             }
         }
 
-        private void SolutionEvents_OnAfterLoadProject(object sender, LoadProjectEventArgs e)
-        {
-            ThreadHelper.ThrowIfNotOnUIThread();
-            _packageHelper.LogDebug("OnAfterLoadProject");
-            ProcessProjectRefs(e.RealHierarchy);
-        }
+        ////private void SolutionEvents_OnAfterLoadProject(object sender, LoadProjectEventArgs e)
+        ////{
+        ////    ThreadHelper.ThrowIfNotOnUIThread();
+        ////    _packageHelper.LogDebug("OnAfterLoadProject");
+        ////    ProcessProjectRefs(e.RealHierarchy);
+        ////}
 
-        private void SolutionEvents_OnAfterOpenProject(object sender, OpenProjectEventArgs e)
-        {
-            ThreadHelper.ThrowIfNotOnUIThread();
-            _packageHelper.LogDebug("OnAfterOpenProject");
-            ProcessProjectRefs(e.Hierarchy);
-        }
+        ////private void SolutionEvents_OnAfterOpenProject(object sender, OpenProjectEventArgs e)
+        ////{
+        ////    ThreadHelper.ThrowIfNotOnUIThread();
+        ////    _packageHelper.LogDebug("OnAfterOpenProject");
+        ////    ProcessProjectRefs(e.Hierarchy);
+        ////}
 
         private void SolutionEvents_OnAfterOpenSolution(object sender, OpenSolutionEventArgs e)
         {
@@ -149,6 +164,13 @@ namespace ProjectRefs
             _packageHelper.LogDebug("OnAfterOpenSolution");
             _solutionOpened = true;
             ProcessProjectRefs();
+        }
+
+        private async Task ProcessProjectRefsAsync(IVsHierarchy project = null)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(1));
+            await JoinableTaskFactory.SwitchToMainThreadAsync();
+            ProcessProjectRefs(project);
         }
 
         private void ProcessProjectRefs(IVsHierarchy project = null)
