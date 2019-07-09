@@ -14,5 +14,6 @@ It is inspired by [Add Project References To Solution](https://marketplace.visua
 It will analyze dependency graph and add/remove reference projects
 
 - after solution opened
-
 - after <img src="img/SaveAll_16x.svg" width="16"> Save All.
+
+![Screen](img/screen.gif)
